@@ -1,0 +1,57 @@
+/**
+	 * Blowfish trick for OpenSSL.
+	 * @link https://bugs.php.net/bug.php?id=72362 We need to make a cycled key for openssl to decrypt the mcrypt's encryption
+	 * @author Yurii Prudius <hardwork.mouse@gmail.com>
+	 * 
+	 * @param string $key
+	 * @return string
+	 */
+	private function _opensslBlowfishKey($key)
+	{
+		// some magic numbers here
+		$magicOpenSSL_keylen = (16 + 2) * 4;
+		$magicMcrypt_keylen = 56;
+
+		return "$key" === '' ? '' : str_pad('', $magicOpenSSL_keylen, substr($key, 0, $magicMcrypt_keylen));
+	}
+
+/**
+	 * @link https://bugs.php.net/bug.php?id=72362 We need to make a zeropadding string for the openssl BF-ECB.
+	 * Encrypt 
+	 * via OpenSSL
+	 * with deprecated 'mcrypt' compatibility.
+	 * @author Yurii Prudius <hardwork.mouse@gmail.com>
+	 * 
+	 * @param string $string
+	 * @return string
+	 */
+	private function _encrypt($string)
+	{
+		// string trick
+		$blockSize = 8;
+		$data = str_pad($string, ceil(strlen($string) / $blockSize) * $blockSize, "\0");
+		//
+
+		$securekey = $this->_opensslBlowfishKey(self::MCRYPT_KEY);
+		return openssl_encrypt($data, 'BF-ECB', $securekey, OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING);
+	}
+
+	/**
+	 * @link https://bugs.php.net/bug.php?id=72362 We need to make a zeropadding string for the openssl BF-ECB.
+	 * Decrypt
+	 * via OpenSSL
+	 * with deprecated 'mcrypt' compatibility.
+	 * @author Yurii Prudius <hardwork.mouse@gmail.com>
+	 * 
+	 * @param string $string
+	 * @return string
+	 */
+	private function _decrypt($string)
+	{
+		if (is_string($string) && !empty($string))
+		{
+			$securekey = $this->_opensslBlowfishKey(self::MCRYPT_KEY);
+			return openssl_decrypt($string, 'BF-ECB', $securekey, OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING);
+		}
+		return '';
+	}
