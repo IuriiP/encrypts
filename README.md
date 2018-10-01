@@ -1,2 +1,2 @@
-# encrypts
-Encrypting/decrypting
+# Encrypts
+Encrypting/decrypting collection
